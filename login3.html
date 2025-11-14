@@ -1,0 +1,266 @@
+<!-- Muscle Factory — Full demo: login, signup, payments (mock), members, attendance, QR id, trainer dashboard, animated homepage -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Muscle Factory — Gym System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{--bg:#071021;--card:#0b1320;--accent:#ff6b6b;--muted:#94a3b8}
+body{background:linear-gradient(180deg,#06060a,#071022);color:#e6eef8;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+.container{max-width:1100px;margin:30px auto}
+.header{display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;gap:12px;align-items:center}
+.logo img{height:54px}
+.hero{display:flex;gap:20px;align-items:center;margin-top:18px}
+.hero .left{flex:1}
+.hero .right{width:360px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.btn-primary{background:linear-gradient(90deg,var(--accent),#ffb86b);border:0}
+.small{font-size:13px;color:var(--muted)}
+/* animated homepage elements */
+.bars{display:flex;gap:6px;align-items:end;height:90px}
+.bar{width:18px;background:linear-gradient(180deg,#ff7b7b,#ffb86b);border-radius:6px;animation:beat 1.6s ease-in-out infinite}
+@keyframes beat{0%{transform:scaleY(1)}50%{transform:scaleY(1.4)}100%{transform:scaleY(1)} }
+/* responsive */
+@media(max-width:900px){.hero{flex-direction:column}.hero .right{width:100%}}
+/* QR image */
+.qr{max-width:220px;border-radius:8px;background:#fff;padding:8px}
+/* table */
+.table-responsive{max-height:320px;overflow:auto}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">
+      <img src="./src/Logo.png" alt="Muscle Factory">
+      <div>
+        <div style="font-weight:700px;font-size:20px">Muscle Factory</div>
+        <div class="small">Strength • Progress • Community</div>
+      </div>
+    </div>
+    <div>
+      <button id="loginBtn" class="btn btn-light">Login / Signup</button>
+    </div>
+  </div>
+
+  <!-- Animated homepage preview -->
+  <div class="hero">
+    <div class="left card">
+      <h2>Welcome to Muscle Factory</h2>
+      <p class="small">Demo gym management system — members, payments, trainer schedules, QR check-in, attendance and admin tools. Uses Firebase Firestore for storage (replace config with your keys).</p>
+
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="openMembership()">Membership Plans</button>
+        <button class="btn btn-outline-light" onclick="openWorkoutPortal()">Your Portal</button>
+      </div>
+
+      <div style="margin-top:18px" class="card">
+        <div class="small">Quick stats</div>
+        <div style="display:flex;gap:12px;margin-top:10px;align-items:end">
+          <div style="text-align:center"><div style="font-weight:700;font-size:18px">1200</div><div class="small">Members</div></div>
+          <div style="text-align:center"><div style="font-weight:700;font-size:18px">32</div><div class="small">Trainers</div></div>
+          <div style="text-align:center"><div style="font-weight:700;font-size:18px">15</div><div class="small">Classes / wk</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right card">
+      <h4 class="mb-2">Live Activity</h4>
+      <div class="bars" aria-hidden>
+        <div class="bar" style="height:40px;animation-delay:0s"></div>
+        <div class="bar" style="height:70px;animation-delay:.2s"></div>
+        <div class="bar" style="height:50px;animation-delay:.4s"></div>
+        <div class="bar" style="height:85px;animation-delay:.1s"></div>
+        <div class="bar" style="height:60px;animation-delay:.35s"></div>
+      </div>
+      <div style="margin-top:12px" class="small">Get your membership & start tracking progress.</div>
+    </div>
+  </div>
+
+  <!-- Pages / Modals injected -->
+  <div id="modal" class="card" style="display:none;margin-top:18px"></div>
+
+  <!-- Admin area -->
+  <div id="adminArea" class="card" style="display:none;margin-top:18px">
+    <h4>Admin — Members & Attendance</h4>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="btn btn-warning" onclick="loadMembers()">Load Members</button>
+      <button class="btn btn-info" onclick="loadAttendance()">Load Attendance</button>
+      <button class="btn btn-success" onclick="exportMembersCSV()">Export Members</button>
+    </div>
+    <div id="adminContent"></div>
+  </div>
+
+</div>
+
+<!-- Scripts: Firebase, html5-qrcode for scanner -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
+
+<script>
+// ---------- Firebase config (replace) ----------
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_APP.firebaseapp.com",
+  projectId: "YOUR_APP",
+  storageBucket: "YOUR_APP.appspot.com",
+  messagingSenderId: "ID",
+  appId: "APPID"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ---------- Utilities ----------
+function showModal(html){ const m=document.getElementById('modal'); m.innerHTML=html; m.style.display='block'; window.scrollTo({top:0,behavior:'smooth'}); }
+function closeModal(){ const m=document.getElementById('modal'); m.style.display='none'; m.innerHTML=''; }
+
+// ---------- Login / Signup (re-usable) ----------
+document.getElementById('loginBtn').addEventListener('click', ()=>{
+  showAuthBox();
+});
+
+function showAuthBox(){
+  showModal(`
+    <h3>Login / Signup</h3>
+    <input id='email' class='form-control mt-2' placeholder='Email'>
+    <input id='password' class='form-control mt-2' type='password' placeholder='Password'>
+    <div style='display:flex;gap:8px;margin-top:8px'>
+      <button class='btn btn-primary' onclick='login()'>Login</button>
+      <button class='btn btn-success' onclick='signup()'>Signup</button>
+    </div>
+    <div style='margin-top:8px'><button class='btn btn-outline-secondary' onclick='showReset()'>Forgot Password</button></div>
+  `);
+}
+
+async function signup(){ const e=document.getElementById('email').value; const p=document.getElementById('password').value; try{ await auth.createUserWithEmailAndPassword(e,p); alert('Registered. Please choose a membership.'); closeModal(); openMembership(e); }catch(err){ alert(err.message); }}
+async function login(){ const e=document.getElementById('email').value; const p=document.getElementById('password').value; try{ await auth.signInWithEmailAndPassword(e,p); alert('Login successful'); closeModal(); showUserPortal(); }catch(err){ alert(err.message); }}
+function showReset(){ showModal(`<h4>Reset Password</h4><input id='resetEmail' class='form-control mt-2' placeholder='Email'><button class='btn btn-warning mt-2' onclick='resetPass()'>Send Reset Link</button>`)}
+async function resetPass(){ try{ await auth.sendPasswordResetEmail(document.getElementById('resetEmail').value); alert('Reset email sent'); closeModal(); }catch(e){ alert(e.message);} }
+
+// ---------- Membership (mock payment) ----------
+function openMembership(prefillEmail){
+  showModal(`
+    <h3>Choose a Plan</h3>
+    <div style='display:flex;gap:8px'>
+      <div class='card' style='flex:1'>
+        <h5>Basic</h5><div class='small'>₹299 / mo</div>
+        <button class='btn btn-primary mt-2' onclick="startPayment('Basic',299,'${prefillEmail||''}')">Buy Basic</button>
+      </div>
+      <div class='card' style='flex:1'>
+        <h5>Pro</h5><div class='small'>₹699 / mo</div>
+        <button class='btn btn-primary mt-2' onclick="startPayment('Pro',699,'${prefillEmail||''}')">Buy Pro</button>
+      </div>
+      <div class='card' style='flex:1'>
+        <h5>Elite</h5><div class='small'>₹1499 / mo</div>
+        <button class='btn btn-primary mt-2' onclick="startPayment('Elite',1499,'${prefillEmail||''}')">Buy Elite</button>
+      </div>
+    </div>
+    <button class='btn btn-secondary mt-3' onclick='closeModal()'>Close</button>
+  `);
+}
+
+// startPayment: opens a mock payment modal. Replace with real gateway integration (Razorpay/Stripe) as needed.
+function startPayment(plan,amount,emailPrefill){
+  showModal(`
+    <h4>Pay ₹${amount} — ${plan}</h4>
+    <div class='small'>This demo performs a mock payment. Replace this with a real gateway SDK for production.</div>
+    <input id='memberName' class='form-control mt-2' placeholder='Full name'>
+    <input id='memberEmail' class='form-control mt-2' placeholder='Email' value='${emailPrefill||''}'>
+    <select id='memberTrainer' class='form-control mt-2'><option value=''>Select Trainer (optional)</option><option>Ravi</option><option>Maya</option><option>Arjun</option></select>
+    <div style='display:flex;gap:8px;margin-top:8px'>
+      <button class='btn btn-success' onclick="completeMockPayment('${plan}',${amount})">Simulate Payment</button>
+      <button class='btn btn-secondary' onclick='closeModal()'>Cancel</button>
+    </div>
+  `);
+}
+
+async function completeMockPayment(plan,amount){
+  // read inputs
+  const name=document.getElementById('memberName').value||'Anonymous';
+  const email=document.getElementById('memberEmail').value||'';
+  const trainer=document.getElementById('memberTrainer').value||'';
+  // create member record in Firestore
+  try{
+    const doc = await db.collection('members').add({name,email,plan,amount,trainer,joined:new Date().toISOString()});
+    // generate QR id using doc id
+    const memberId = doc.id;
+    await db.collection('members').doc(memberId).update({memberId});
+    alert('Payment recorded & member created — ID: '+memberId);
+    closeModal();
+    showMemberCard(memberId);
+  }catch(e){alert('Error: '+e.message)}
+}
+
+// ---------- Member QR card ----------
+function showMemberCard(memberId){
+  showModal(`<h4>Member ID Card</h4><div class='card' style='display:flex;gap:12px;align-items:center'><div><img class='qr' src='https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(memberId)}' alt='qr'></div><div><div style='font-weight:700'>Member ID</div><div class='small'>${memberId}</div><button class='btn btn-primary mt-2' onclick="downloadQR('${memberId}')">Download QR</button></div></div>`);
+}
+function downloadQR(id){ const url='https://chart.googleapis.com/chart?chs=400x400&cht=qr&chl='+encodeURIComponent(id); const a=document.createElement('a'); a.href=url; a.download='mf_'+id+'.png'; a.click(); }
+
+// ---------- QR Check-in (scan via camera) ----------
+function openQRScanner(){
+  showModal(`<h4>QR Check-in</h4><div id='qr-reader' style='width:100%'></div><div id='qr-result' class='small mt-2'></div><button class='btn btn-secondary mt-2' onclick='closeModal()'>Close</button>`);
+  const html5QrcodeScanner = new Html5Qrcode("qr-reader");
+  html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText)=>{
+    // on success
+    document.getElementById('qr-result').innerText = 'Scanned: '+decodedText;
+    markAttendance(decodedText);
+    html5QrcodeScanner.stop();
+  }, (err)=>{ /* ignore errors */ }).catch(err=>{document.getElementById('qr-result').innerText = 'Camera unavailable: '+err});
+}
+
+async function markAttendance(memberId){
+  try{
+    await db.collection('attendance').add({memberId,time:new Date().toISOString()});
+    alert('Attendance marked for '+memberId);
+  }catch(e){alert(e.message)}
+}
+
+// ---------- Admin features: load members, attendance, export ----------
+async function loadMembers(){
+  const snap = await db.collection('members').orderBy('joined','desc').get();
+  let html = `<div class='table-responsive'><table class='table table-dark'><thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Trainer</th><th>Joined</th><th>QR</th></tr></thead><tbody>`;
+  snap.forEach(d=>{const r=d.data(); html+=`<tr><td>${r.name||''}</td><td>${r.email||''}</td><td>${r.plan||''}</td><td>${r.trainer||''}</td><td>${new Date(r.joined).toLocaleString()}</td><td><button class='btn btn-sm btn-outline-light' onclick="showMemberCard('${r.memberId}')">QR</button></td></tr>`});
+  html += '</tbody></table></div>';
+  document.getElementById('adminContent').innerHTML = html;
+}
+async function loadAttendance(){
+  const snap = await db.collection('attendance').orderBy('time','desc').limit(200).get();
+  let html = `<div class='table-responsive'><table class='table table-dark'><thead><tr><th>Member ID</th><th>Time</th></tr></thead><tbody>`;
+  snap.forEach(d=>{const r=d.data(); html+=`<tr><td>${r.memberId}</td><td>${new Date(r.time).toLocaleString()}</td></tr>`});
+  html += '</tbody></table></div>';
+  document.getElementById('adminContent').innerHTML = html;
+}
+
+async function exportMembersCSV(){
+  const snap = await db.collection('members').get(); let csv='Name,Email,Plan,Trainer,Joined\n'; snap.forEach(d=>{const r=d.data(); csv+=`"${r.name}","${r.email}","${r.plan}","${r.trainer}","${r.joined}"\n`});
+  const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='members.csv'; a.click();
+}
+
+// ---------- Trainer management (simple assignment) ----------
+async function assignClientToTrainer(memberId,trainer){
+  await db.collection('trainer_assignments').add({memberId,trainer,assignedOn:new Date().toISOString()});
+  alert('Assigned '+memberId+' to '+trainer);
+}
+
+// ---------- User portal ----------
+function showUserPortal(){ showModal(`<h4>Your Portal</h4><div id='portalContent' class='small'>Loading profile...</div><div style='display:flex;gap:8px;margin-top:8px'><button class='btn btn-secondary' onclick='openQRScanner()'>Check-in (Scan)</button><button class='btn btn-primary' onclick='openMembership()'>Buy/Upgrade Plan</button></div>`); loadUserProfile(); }
+async function loadUserProfile(){ const user = auth.currentUser; if(!user) return; const snap = await db.collection('members').where('email','==',user.email).get(); if(snap.empty){ document.getElementById('portalContent').innerText='No membership found. Please buy a plan.'; return;} const r = snap.docs[0].data(); document.getElementById('portalContent').innerHTML = `<div><strong>${r.name}</strong><div class='small'>Plan: ${r.plan}</div><img class='qr mt-2' src='https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(r.memberId)}'></div>`; }
+
+// ---------- Simple admin login for demo ----------
+// For demo: Admin is identified by email 'admin@musclefactory.example' after auth login
+auth.onAuthStateChanged(user=>{ if(user){ if(user.email==='admin@musclefactory.example'){ document.getElementById('adminArea').style.display='block'; } }
+});
+
+// ---------- Helpers to open sections ----------
+function openWorkoutPortal(){ showUserPortal(); }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Muscle Factory</title>
+  <link rel="icon" type="image/png" href="./src/icon.png">
+  <style>
+    :root{--bg:#75a1ea;--card:#0b1320;--accent:#e7e7e7;--muted:#94a3b8;--glass: rgba(255,255,255,0.04)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#071022 0%, #081428 50%, #06111b 100%);color:#e6eef8;min-height:100vh;}
+    a{color:inherit;text-decoration:none}
+
+    /* === Header / Nav === */
+    header{position:sticky;top:0;backdrop-filter: blur(6px);background:linear-gradient(180deg, rgba(3,7,15,0.5), rgba(3,7,15,0.25));border-bottom:1px solid rgba(255,255,255,0.03);z-index:40}
+    .nav{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 20px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:700}
+    /* .logo{width:44px;height:44px;background:linear-gradient(135deg,#ff6b6b,#ffb86b);display:grid;place-items:center;border-radius:8px;box-shadow:0 6px 20px rgba(255,107,107,0.12)}
+    .logo img{width:22px;height:22px} */
+    nav ul{display:flex;gap:10px;align-items:center;margin:0;padding:0;list-style:none}
+    nav button, nav a{background:transparent;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+    nav a.active, nav button:hover, nav a:hover{color:#fff;background:rgba(255,255,255,0.03)}
+
+    /* === Hero === */
+    .hero{max-width:1100px;margin:28px auto;padding:28px 20px;display:grid;grid-template-columns:1fr 420px;gap:36px;align-items:start}
+    .hero-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:28px;box-shadow:0 6px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+    h1{font-size:28px;margin:0 0 8px}
+    p.lead{color:var(--muted);margin:0 0 18px}
+    .cta-group{display:flex;gap:10px}
+    .btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),#ffb86b);color:#08121a}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+
+    /* Animated flourish */
+    .stats{display:flex;gap:14px;margin-top:18px}
+    .stat{background:var(--glass);padding:12px;border-radius:10px;text-align:center;min-width:90px;animation: float 4s ease-in-out infinite}
+    @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+
+    /* Right column cards */
+    .card-small{padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));}
+    .workout-list{display:grid;gap:12px}
+
+    /* === Sections === */
+    section{max-width:1100px;margin:26px auto;padding:0 20px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .plan{padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);transition:transform .3s ease, box-shadow .3s ease}
+    .plan:hover{transform:translateY(-8px);box-shadow:0 20px 40px rgba(2,6,23,0.6)}
+
+    /* Workout cards */
+    .workout-card{display:flex;gap:12px;align-items:center}
+    .workout-card img{width:96px;height:72px;border-radius:8px;object-fit:cover}
+
+    /* Forms & Modals */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:none;align-items:center;justify-content:center;z-index:60}
+    .modal{width:400px;background:linear-gradient(180deg,#06111b, #071428);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04)}
+    .form-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+    input,textarea,select{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#e6eef8}
+
+    /* Footer */
+    footer{max-width:1100px;margin:30px auto;padding:18px 20px;color:var(--muted);font-size:14px}
+
+    /* Responsive */
+    @media (max-width:920px){.hero{grid-template-columns:1fr;}.grid-3{grid-template-columns:repeat(2,1fr)}.card-small{display:none}}
+    @media (max-width:560px){.grid-3{grid-template-columns:1fr}}
+
+    /* small micro-interactions */
+    .nav-toggle{display:none}
+    @media (max-width:680px){nav ul{display:none}.nav-toggle{display:block}}
+
+    /* tiny animations for buttons */
+    .pulse{animation:pulse 2.2s infinite}
+    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+
+    /* admin badge */
+    .badge{display:inline-block;padding:6px 8px;border-radius:999px;background:rgb(245, 241, 241);font-weight:600;color:var(--muted)}
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+        <div class="logo">
+         <img src="./src/Logo.png" alt="Logo" width="65px" height="50px" >
+        <h1>Muscle Factory</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#home" class="active" data-link>Home</a></li>
+          <li><a href="#workouts" data-link>Workouts</a></li>
+          <li><a href="#plans" data-link>Membership</a></li>
+          <li><a href="#about" data-link>About</a></li>
+          <li><a href="#contact" data-link>Contact</a></li>
+          <li><a href="./login3.html">User Login</a></li>
+          <li><a href="./adminlogin.html">Admin </a></li>
+        </ul>
+      </nav>
+      <button class="nav-toggle">☰</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero">
+      <div class="hero-card">
+        <h1>Build strength. Sculpt your future.</h1>
+        <p class="lead">Muscle Factory provides guided workouts, flexible memberships, and tools to track progress. Join our community and transform with science-backed routines.</p>
+        <div class="cta-group">
+          <button class="btn btn-primary" onclick="openSection('#plans')">View Plans</button>
+          <button class="btn btn-ghost" onclick="openSection('#workouts')">See Workouts</button>
+        </div>
+
+        <div class="stats" aria-hidden>
+          <div class="stat">
+            <div style="font-size:18px;font-weight:700">12K+</div>
+            <div style="font-size:12px;color:var(--muted)">Members</div>
+          </div>
+          <div class="stat">
+            <div style="font-size:18px;font-weight:700">250+</div>
+            <div style="font-size:12px;color:var(--muted)">Workouts</div>
+          </div>
+          <div class="stat">
+            <div style="font-size:18px;font-weight:700">10</div>
+            <div style="font-size:12px;color:var(--muted)">Years</div>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:18px 0">
+        <div style="display:flex;gap:12px;align-items:center">
+        <div>
+          <nav>
+            <ul>
+            <li><img src="./src/Guna.jpg" alt="Trainer" style="width:80px;height:80px;border-radius:10px;object-fit:cover;border:2px solid rgba(255,255,255,0.03)">
+            <div style="font-weight:700">Guna Sekhar</div>
+            <div style="font-size:13px;color:var(--bg)">Strength & Hypertrophy Specialist</div></li>
+             <li><img src="./src/Sai kumar.jpg" alt="Trainer" style="width:80px;height:80px;border-radius:10px;object-fit:cover;border:2px solid rgba(255,255,255,0.03)">
+            <div style="font-weight: 700">Sai kumar </div>
+            <div style="font-size: 13px;color: var(--bg)">Cardio & Boxing Coach</div></li>
+            <li><img src="./src/Hareesh.jpg" alt="Diet Master" style="width:80px;height:80px;border-radius:10px;object-fit:cover;border:2px solid rgba(255,255,255,0.03)">
+            <div style="font-weight: 700;">Hareesh</div>
+            <div style="font-size: 13px;color: var(--bg);">Nutrition Specialist</div></li>
+            </ul>
+          </nav>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card-small">
+        <h3 style="margin:0 0 8px">Quick Workouts</h3>
+        <div class="workout-list">
+          <div class="workout-card">
+            <img src="./src/Full body workout.png" alt="fullbody">
+            <div>
+              <div style="font-weight:700">Full Body Blast</div>
+              <div style="font-size:13px;color:var(--muted)">30 mins • No equipment</div>
+            </div>
+          </div>
+          <div class="workout-card">
+            <img src="./src/strength.jpg" alt="push">
+            <div>
+              <div style="font-weight:700">Push Strength</div>
+              <div style="font-size:13px;color:var(--muted)">45 mins • Gym</div>
+            </div>
+          </div>
+          <div class="workout-card">
+            <img src="./src/core-strength.jpg" alt="core">
+            <div>
+              <div style="font-weight:700">Core & Mobility</div>
+              <div style="font-size:13px;color:var(--muted)">20 mins • Stretch</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Workouts -->
+    <section id="workouts">
+      <div class="hero-card">
+        <h2 style="margin-top:0">Workouts</h2>
+        <p class="lead">Filter workouts by goal and time. Click a workout to view details and sample routine.</p>
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <select id="filterGoal" onchange="renderWorkouts()">
+            <option value="all">All goals</option>
+            <option value="strength">Strength</option>
+            <option value="hypertrophy">Hypertrophy</option>
+            <option value="conditioning">Conditioning</option>
+          </select>
+          <select id="filterTime" onchange="renderWorkouts()">
+            <option value="any">Any time</option>
+            <option value="30">&lt; 30 mins</option>
+            <option value="30-60">30-60 mins</option>
+            <option value=">60">&gt; 60 mins</option>
+          </select>
+        </div>
+
+        <div id="workoutGrid" class="grid-3"></div>
+      </div>
+    </section>
+
+    <!-- Membership Plans -->
+    <section id="plans">
+      <h2 style="text-align:center;margin-bottom:8px">Membership Plans</h2>
+      <p style="text-align:center;color:var(--muted);margin-top:0">Flexible plans — cancel anytime. All plans include access to the workout library and community.</p>
+      <div class="grid-3">
+        <div class="plan">
+          <h3>Basic</h3>
+          <p class="lead" style="color:var(--muted)">Starter tools for beginners</p>
+          <ul style="color:var(--muted)">
+            <li>Access to library</li>
+            <li>3 training programs</li>
+            <li>Community chat</li>
+          </ul>
+          <div style="margin-top:12px;font-size:20px;font-weight:700">₹299 / mo</div>
+          <div style="margin-top:12px"><button class="btn btn-primary pulse" onclick="alert('Thanks for choosing Basic!')">Join Basic</button></div>
+        </div>
+        <div class="plan">
+          <h3>Pro</h3>
+          <p class="lead" style="color:var(--muted)">For committed lifters</p>
+          <ul style="color:var(--muted)">
+            <li>Everything in Basic</li>
+            <li>Personalized plans</li>
+            <li>Video library</li>
+          </ul>
+          <div style="margin-top:12px;font-size:20px;font-weight:700">₹699 / mo</div>
+          <div style="margin-top:12px"><button class="btn btn-primary" onclick="alert('Pro membership coming soon!')">Join Pro</button></div>
+        </div>
+        <div class="plan">
+          <h3>Elite</h3>
+          <p class="lead" style="color:var(--muted)">1-on-1 coaching and nutrition</p>
+          <ul style="color:var(--muted)">
+            <li>Coach check-ins</li>
+            <li>Nutrition plan</li>
+            <li>Priority support</li>
+          </ul>
+          <div style="margin-top:12px;font-size:20px;font-weight:700">₹1,499 / mo</div>
+          <div style="margin-top:12px"><button class="btn btn-primary" onclick="alert('Contact us to activate Elite')">Contact Sales</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section id="about">
+      <div class="hero-card">
+        <h2>About Muscle Factory</h2>
+        <p class="lead">We are a team of coaches, physiologists and nutritionists focused on delivering safe, progressive strength training. Our mission is to make strength training approachable for everyone.</p>
+        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+          <div style="min-width:220px" class="card-small">
+            <h4>Our Vision</h4>
+            <p style="color:var(--muted)">Evidence-based programs, community-driven support, long-term progress.</p>
+          </div>
+          <div style="min-width:220px" class="card-small">
+            <h4>Our Team</h4>
+            <p style="color:var(--muted)">Certified coaches and nutritionists with years of experience.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact">
+      <div class="hero-card">
+        <h2>Contact</h2>
+        <p class="lead">Questions? Send us a message — we'll reply within 48 hours.</p>
+        <form onsubmit="submitContact(event)">
+          <div class="form-group">
+            <label>Name</label>
+            <input id="contactName" required>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input id="contactEmail" type="email" required>
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea id="contactMessage" rows="4" required></textarea>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn btn-primary" type="submit">Send Message</button>
+            <div style="color:var(--muted);font-size:13px">Or email us at <strong>hello@musclefactory.example</strong></div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>© Muscle Factory • 2025</div>
+      <div style="color:var(--muted)">Address: Ram Nagar,Uppal,Hyderabad,500039 • Phone: +91 63037 53034</div>
+    </div>
+  </footer>
+
+  <!-- Modals -->
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal" id="modalContent">
+      <!-- content injected by JS -->
+    </div>
+  </div>
+
+  <script>
+    // Simple SPA-ish navigation for anchors
+    document.querySelectorAll('[data-link]').forEach(el=>el.addEventListener('click', e=>{
+      e.preventDefault(); const id = el.getAttribute('href'); openSection(id);
+      document.querySelectorAll('[data-link]').forEach(x=>x.classList.remove('active')); el.classList.add('active');
+    }))
+    function openSection(id){ const el = document.querySelector(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    // Workout data
+    const workouts = [
+      {id:1,title:'Strength: Lower Body',time:50,goal:'strength',desc:'Heavy compound lifts focused on squats and deadlifts.'},
+      {id:2,title:'Hypertrophy: Upper Split',time:60,goal:'hypertrophy',desc:'Moderate rep ranges to build muscle mass.'},
+      {id:3,title:'Conditioning Circuit',time:25,goal:'conditioning',desc:'Short, intense intervals to improve work capacity.'},
+      {id:4,title:'Full Body Hypertrophy',time:40,goal:'hypertrophy',desc:'Balanced full-body routine for muscle growth.'},
+      {id:5,title:'Power & Speed',time:70,goal:'strength',desc:'Explosive movements and speed work.'}
+    ];
+
+    function renderWorkouts(){
+      const goal = document.getElementById('filterGoal').value;
+      const time = document.getElementById('filterTime').value;
+      const grid = document.getElementById('workoutGrid'); grid.innerHTML='';
+      const filtered = workouts.filter(w=>{
+        if(goal!=='all' && w.goal!==goal) return false;
+        if(time==='<30' && w.time>=30) return false;
+        if(time==='30-60' && (w.time<30 || w.time>60)) return false;
+        if(time==='>60' && w.time<=60) return false;
+        return true;
+      });
+      if(filtered.length===0) grid.innerHTML = '<div style="color:var(--muted)">No workouts found.</div>';
+      filtered.forEach(w=>{
+        const card = document.createElement('div'); card.className='plan';
+        card.innerHTML = `<h4>${w.title}</h4><div style="color:var(--muted)">${w.time} mins • ${w.goal}</div><p style="margin-top:8px;color:var(--muted)">${w.desc}</p><div style="margin-top:12px"><button class='btn btn-primary' onclick='openWorkout(${w.id})'>Open</button></div>`;
+        grid.appendChild(card);
+      })
+    }
+    renderWorkouts();
+
+    function openWorkout(id){
+      const w = workouts.find(x=>x.id===id);
+      showModal(`<h3>${w.title}</h3><p style="color:var(--muted)">${w.desc}</p><ol style="color:var(--muted)"><li>Warm-up 10 min</li><li>Main lifts x3 sets</li><li>Accessory work 3-4 exercises</li><li>Cooldown</li></ol><div style="text-align:right;margin-top:8px"><button class='btn btn-ghost' onclick='closeModal()'>Close</button></div>`)
+    }
+
+    // Contact submission (demo)
+    function submitContact(e){e.preventDefault(); const name=document.getElementById('contactName').value; const email=document.getElementById('contactEmail').value; const msg=document.getElementById('contactMessage').value; console.log('Contact:',name,email,msg); alert('Thanks, '+name+' — we\'ll reply to '+email+' soon.'); e.target.reset(); }
+
+    /* Modal helpers */
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalContent = document.getElementById('modalContent');
+    function showModal(html){ modalContent.innerHTML = html; modalBackdrop.style.display='flex'; document.body.style.overflow='hidden'; }
+    function closeModal(){ modalBackdrop.style.display='none'; document.body.style.overflow='auto'; }
+    modalBackdrop.addEventListener('click', e=>{ if(e.target===modalBackdrop) closeModal(); });
+
+    // User login (demo, not secure). Will store 'user' in localStorage as demo session.
+    document.getElementById('userLoginBtn').addEventListener('click', ()=>{
+      showModal(`<h3>User Login</h3><div class='form-group'><label>Email</label><input id='uemail' type='email' required></div><div class='form-group'><label>Password</label><input id='upass' type='password' required></div><div style='display:flex;gap:8px;justify-content:flex-end'><button class='btn btn-primary' onclick='userLogin()'>Login</button><button class='btn btn-ghost' onclick='closeModal()'>Close</button></div>`)
+    })
+    function userLogin(){ const email=document.getElementById('uemail').value; const pass=document.getElementById('upass').value; if(!email||!pass){alert('Enter credentials')}else{localStorage.setItem('mf_user',email); closeModal(); alert('Welcome back — '+email)} }
+
+    // Admin login (demo). password: admin123 (for prototype only).
+    document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
+      showModal(`<h3>Admin Login</h3><div class='form-group'><label>Username</label><input id='auser' value='admin'></div><div class='form-group'><label>Password</label><input id='apass' type='password'></div><div style='display:flex;gap:8px;justify-content:flex-end'><button class='btn btn-primary' onclick='adminLogin()'>Sign In</button><button class='btn btn-ghost' onclick='closeModal()'>Close</button></div>`)
+    })
+    function adminLogin(){ const user=document.getElementById('auser').value; const pass=document.getElementById('apass').value; if(user==='Guna Sekhar' && pass==='guna1234'){closeModal(); showModal(`<h3>Admin Dashboard</h3><p style='color:var(--muted)'>Demo admin panel — manage workouts and members.</p><div style='display:flex;gap:8px;flex-direction:column'><button class='btn btn-primary' onclick='mockAddWorkout()'>Add Sample Workout</button><button class='btn btn-ghost' onclick='closeModal()'>Logout</button></div>`)}else{alert('Incorrect admin credentials') } }
+    function mockAddWorkout(){ const id = workouts.length+1; workouts.push({id,title:'New Workout '+id,time:30,goal:'strength',img:'',desc:'New sample workout.'}); renderWorkouts(); alert('New workout added') }
+
+    // small enhancement: show logged-in user if present
+    function checkSession(){ const u = localStorage.getItem('mf_user'); const btn = document.getElementById('userLoginBtn'); if(u){ btn.textContent = u.split('@')[0]; btn.onclick = ()=>{ showModal(`<h3>Logged in as ${u}</h3><div style='display:flex;gap:8px;justify-content:flex-end'><button class='btn btn-ghost' onclick='localStorage.removeItem(\'mf_user\');closeModal();location.reload()'>Logout</button></div>`)} }
+    }
+    checkSession();
+
+    // tiny progressive enhancement: keyboard shortcut for admin (a then d)
+    let seq=''; window.addEventListener('keydown', e=>{ seq += e.key; if(seq.endsWith('ad')) document.getElementById('adminLoginBtn').click(); if(seq.length>5) seq=seq.slice(-3); });
+
+  </script>
+</body>
+</html>
